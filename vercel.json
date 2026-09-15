@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/((?!developers\\.html|docs\\.html|index\\.html|_redirects|vercel\\.json).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

@@ -5,18 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Developers — Link Share</title>
 <meta name="description" content="Generate a free API key to upload files to Link Share from your own projects.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23D8481B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8Z'/%3E%3Ccircle cx='7' cy='7' r='1.4' fill='%23D8481B' stroke='none'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#F7F6F2; --bg-alt:#FFFFFF; --ink:#1B1B1F; --ink-soft:#6B6960;
-    --line:#E3E0D8; --accent:#2451FF; --accent-ink:#0E2FA6;
-    --success:#1B9E67; --danger:#C23B3B; --radius:10px;
+    --line:#E3E0D8; --accent:#D8481B; --accent-ink:#A8340F;
+    --success:#1B9E67; --danger:#C23B3B; --radius:6px;
   }
   html[data-theme="dark"]{
     --bg:#0F1117; --bg-alt:#161822; --ink:#F1F0EC; --ink-soft:#9A98A0;
-    --line:#2A2C36; --accent:#6E93FF; --accent-ink:#AEC1FF;
+    --line:#2A2C36; --accent:#FF8354; --accent-ink:#FFB08A;
     --success:#39C983; --danger:#FF7373;
   }
   *{box-sizing:border-box;}
@@ -24,19 +25,19 @@
   a{color:var(--accent);}
   .wrap{max-width:620px; margin:0 auto; padding:0 24px;}
   header{display:flex; align-items:center; justify-content:space-between; padding:22px 24px; max-width:980px; margin:0 auto;}
-  .brand{display:flex; align-items:center; gap:10px; font-family:'Fraunces',serif; font-size:20px; font-weight:600; letter-spacing:-.01em; text-decoration:none; color:var(--ink);}
+  .brand{display:flex; align-items:center; gap:10px; font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:600; letter-spacing:-.01em; text-decoration:none; color:var(--ink);}
   nav{display:flex; align-items:center; gap:18px;}
   nav a{color:var(--ink-soft); text-decoration:none; font-size:14px; font-weight:500;}
   nav a.current, nav a:hover{color:var(--ink);}
   .theme-btn{border:1px solid var(--line); background:var(--bg-alt); color:var(--ink); width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer;}
 
   .hero{padding:40px 0 8px; text-align:center;}
-  h1{font-family:'Fraunces',serif; font-weight:500; font-size:36px; margin:0 0 12px; letter-spacing:-.01em;}
+  h1{font-family:'Space Grotesk',sans-serif; font-weight:500; font-size:36px; margin:0 0 12px; letter-spacing:-.01em;}
   .sub{color:var(--ink-soft); font-size:16px; line-height:1.6; max-width:480px; margin:0 auto 8px;}
 
   section{padding:32px 0;}
-  .card{border:1px solid var(--line); border-radius:var(--radius); background:var(--bg-alt); padding:26px;}
-  .card h2{font-family:'Fraunces',serif; font-weight:500; font-size:20px; margin:0 0 14px;}
+  .card{border:1px solid var(--line); border-top:2px dashed var(--line); border-radius:0; background:var(--bg-alt); padding:28px 26px 26px; clip-path:polygon(0 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%);}
+  .card h2{font-family:'Space Grotesk',sans-serif; font-weight:500; font-size:20px; margin:0 0 14px;}
   label{display:block; font-size:13.5px; color:var(--ink-soft); margin-bottom:6px;}
   input[type=text], input[type=password]{
     width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--line);
@@ -81,9 +82,9 @@
 
 <header>
   <a class="brand" href="index.html">
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round">
-      <path d="M10 14a4 4 0 0 0 5.7.3l3-3a4 4 0 0 0-5.7-5.7l-1.6 1.6"/>
-      <path d="M14 10a4 4 0 0 0-5.7-.3l-3 3a4 4 0 0 0 5.7 5.7l1.6-1.6"/>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8Z"/>
+      <circle cx="7" cy="7" r="1.4" fill="var(--accent)" stroke="none"/>
     </svg>
     Link Share
   </a>
@@ -134,7 +135,7 @@
   <hr class="divider">
 
   <section>
-    <h2 style="font-family:'Fraunces',serif; font-weight:500; font-size:20px;">Next step</h2>
+    <h2 style="font-family:'Space Grotesk',sans-serif; font-weight:500; font-size:20px;">Next step</h2>
     <ol class="steps">
       <li>Copy your new API key somewhere safe.</li>
       <li>Head to the <a href="docs.html">API docs</a> for the upload endpoint and code examples.</li>

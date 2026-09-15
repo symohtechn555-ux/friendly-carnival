@@ -5,23 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Link Share — upload anything, share instantly</title>
 <meta name="description" content="Upload any file and get a link you can share or embed anywhere. No account needed.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232451FF' stroke-width='2.4'%3E%3Cpath d='M10 14a4 4 0 0 0 5.7.3l3-3a4 4 0 0 0-5.7-5.7l-1.6 1.6'/%3E%3Cpath d='M14 10a4 4 0 0 0-5.7-.3l-3 3a4 4 0 0 0 5.7 5.7l1.6-1.6'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23D8481B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8Z'/%3E%3Ccircle cx='7' cy='7' r='1.4' fill='%23D8481B' stroke='none'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
   :root{
     --bg:#F7F6F2; --bg-alt:#FFFFFF; --ink:#1B1B1F; --ink-soft:#6B6960;
-    --line:#E3E0D8; --accent:#2451FF; --accent-ink:#0E2FA6; --amber:#C97C1D;
-    --success:#1B9E67; --danger:#C23B3B; --radius:10px;
+    --line:#E3E0D8; --accent:#D8481B; --accent-ink:#A8340F; --amber:#C97C1D;
+    --success:#1B9E67; --danger:#C23B3B; --radius:6px;
     --shadow:0 1px 2px rgba(20,20,20,.04);
   }
   html[data-theme="dark"]{
     --bg:#0F1117; --bg-alt:#161822; --ink:#F1F0EC; --ink-soft:#9A98A0;
-    --line:#2A2C36; --accent:#6E93FF; --accent-ink:#AEC1FF; --amber:#E0A64B;
+    --line:#2A2C36; --accent:#FF8354; --accent-ink:#FFB08A; --amber:#E0A64B;
     --success:#39C983; --danger:#FF7373;
   }
   *{box-sizing:border-box;}
@@ -37,7 +37,7 @@
 
   /* header */
   header{display:flex; align-items:center; justify-content:space-between; padding:22px 24px; max-width:980px; margin:0 auto;}
-  .brand{display:flex; align-items:center; gap:10px; font-family:'Fraunces',serif; font-size:20px; font-weight:600; letter-spacing:-.01em;}
+  .brand{display:flex; align-items:center; gap:10px; font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:600; letter-spacing:-.01em;}
   .brand svg{flex:none;}
   nav{display:flex; align-items:center; gap:18px;}
   nav a{color:var(--ink-soft); text-decoration:none; font-size:14px; font-weight:500;}
@@ -50,18 +50,26 @@
   .theme-btn:hover{border-color:var(--accent);}
 
   /* hero */
-  .hero{padding:36px 0 8px; text-align:center;}
+  .hero{padding:36px 0 8px; text-align:center; position:relative;}
+  .hero::before{
+    content:''; position:absolute; inset:-20px -24px auto -24px; height:340px;
+    background-image:radial-gradient(var(--line) 1px, transparent 1px);
+    background-size:22px 22px; -webkit-mask-image:linear-gradient(to bottom, black, transparent);
+    mask-image:linear-gradient(to bottom, black, transparent); opacity:.7; pointer-events:none; z-index:0;
+  }
+  .hero > *{position:relative; z-index:1;}
   .hero h1{
-    font-family:'Fraunces',serif; font-weight:500; font-size:44px; line-height:1.12;
+    font-family:'Space Grotesk',sans-serif; font-weight:500; font-size:44px; line-height:1.12;
     letter-spacing:-.015em; margin:0 0 14px;
   }
   .hero p.sub{color:var(--ink-soft); font-size:17px; line-height:1.6; margin:0 auto 30px; max-width:480px;}
 
   /* dropzone */
   .dropzone{
-    border:1.5px dashed var(--line); border-radius:var(--radius); background:var(--bg-alt);
-    padding:44px 24px; text-align:center; cursor:pointer; position:relative;
+    border:1.5px solid var(--line); border-top:2px dashed var(--line); border-radius:0; background:var(--bg-alt);
+    padding:44px 24px 30px; text-align:center; cursor:pointer; position:relative;
     transition:border-color .15s, background .15s;
+    clip-path:polygon(0 0, 100% 0, 100% calc(100% - 22px), calc(100% - 22px) 100%, 0 100%);
   }
   .dropzone.drag{border-color:var(--accent); background:color-mix(in srgb, var(--accent) 6%, var(--bg-alt));}
   .dropzone svg{margin-bottom:12px;}
@@ -110,12 +118,21 @@
 
   /* sections */
   section{padding:56px 0;}
-  .section-title{font-family:'Fraunces',serif; font-size:26px; font-weight:500; margin:0 0 26px; letter-spacing:-.01em;}
+  .section-title{font-family:'Space Grotesk',sans-serif; font-size:26px; font-weight:500; margin:0 0 26px; letter-spacing:-.01em;}
   .divider{border:none; border-top:1px solid var(--line); margin:0;}
 
-  .steps{display:flex; flex-direction:column; gap:22px;}
-  .step{display:flex; gap:16px;}
-  .step .num{font-family:'JetBrains Mono',monospace; color:var(--accent); font-size:14px; padding-top:2px; flex:none; width:26px;}
+  .steps{display:flex; flex-direction:column; gap:0; position:relative; padding-left:6px;}
+  .step{display:flex; gap:18px; position:relative; padding:0 0 30px 0;}
+  .step:last-child{padding-bottom:0;}
+  .step .num{
+    font-family:'JetBrains Mono',monospace; color:var(--accent); font-size:11px; font-weight:600;
+    flex:none; width:26px; height:26px; border-radius:50%; background:var(--bg-alt); border:1.5px solid var(--accent);
+    display:flex; align-items:center; justify-content:center; position:relative; z-index:1;
+  }
+  .step:not(:last-child)::before{
+    content:''; position:absolute; left:13px; top:26px; bottom:0; width:0; border-left:2px dashed var(--line); z-index:0;
+  }
+  .step .step-body{padding-top:2px;}
   .step h3{margin:0 0 4px; font-size:15.5px; font-weight:600;}
   .step p{margin:0; color:var(--ink-soft); font-size:14.5px; line-height:1.55;}
 
@@ -128,9 +145,9 @@
 
   .gallery{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px;}
   .g-card{
-    border:1px solid var(--line); border-radius:var(--radius); background:var(--bg-alt);
+    border:1px solid var(--line); border-radius:0; background:var(--bg-alt);
     text-decoration:none; color:var(--ink); overflow:hidden; display:flex; flex-direction:column;
-    transition:border-color .15s;
+    transition:border-color .15s; clip-path:polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
   }
   .g-card:hover{border-color:var(--accent);}
   .g-thumb{aspect-ratio:1.3; background:var(--bg); display:flex; align-items:center; justify-content:center; overflow:hidden;}
@@ -161,7 +178,7 @@
   #toast.show{opacity:1; transform:translate(-50%,0);}
 
   /* share page */
-  .share-card{border:1px solid var(--line); border-radius:var(--radius); background:var(--bg-alt); padding:26px; text-align:center;}
+  .share-card{border:1px solid var(--line); border-top:2px dashed var(--line); border-radius:0; background:var(--bg-alt); padding:30px 26px 26px; text-align:center; clip-path:polygon(0 0, 100% 0, 100% calc(100% - 22px), calc(100% - 22px) 100%, 0 100%);}
   .share-preview{max-width:100%; border-radius:8px; margin-bottom:18px; background:var(--bg);}
   .share-preview img, .share-preview video{max-width:100%; max-height:420px; border-radius:8px; display:block; margin:0 auto;}
   .file-badge{
@@ -189,7 +206,7 @@
   /* admin */
   #adminView{max-width:820px; margin:0 auto; padding:60px 24px;}
   .admin-login{max-width:340px; margin:60px auto; text-align:center;}
-  .admin-login h2{font-family:'Fraunces',serif; font-weight:500; margin-bottom:6px;}
+  .admin-login h2{font-family:'Space Grotesk',sans-serif; font-weight:500; margin-bottom:6px;}
   .admin-login p{color:var(--ink-soft); font-size:13.5px; margin-bottom:20px;}
   .admin-login input{width:100%; margin-bottom:12px; padding:10px 12px; border-radius:8px; border:1px solid var(--line); background:var(--bg-alt); color:var(--ink); font-size:14px;}
   .admin-row{display:flex; align-items:center; gap:12px; border-top:1px solid var(--line); padding:14px 0;}
@@ -223,9 +240,9 @@
 
 <header>
   <div class="brand">
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round">
-      <path d="M10 14a4 4 0 0 0 5.7.3l3-3a4 4 0 0 0-5.7-5.7l-1.6 1.6"/>
-      <path d="M14 10a4 4 0 0 0-5.7-.3l-3 3a4 4 0 0 0 5.7 5.7l1.6-1.6"/>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8Z"/>
+      <circle cx="7" cy="7" r="1.4" fill="var(--accent)" stroke="none"/>
     </svg>
     Link Share
   </div>
@@ -290,9 +307,9 @@
   <section id="how">
     <h2 class="section-title">How it works</h2>
     <div class="steps">
-      <div class="step"><div class="num">01</div><div><h3>Drop your file</h3><p>Drag it into the box above, or click to choose one or several files from your device.</p></div></div>
-      <div class="step"><div class="num">02</div><div><h3>We upload and store it</h3><p>Your file is saved straight to secure cloud storage, with a progress bar so you can watch it land.</p></div></div>
-      <div class="step"><div class="num">03</div><div><h3>Get your link</h3><p>Copy the share link, the direct file link, or a ready-made embed snippet for your own website.</p></div></div>
+      <div class="step"><div class="num">01</div><div class="step-body"><h3>Drop your file</h3><p>Drag it into the box above, or click to choose one or several files from your device.</p></div></div>
+      <div class="step"><div class="num">02</div><div class="step-body"><h3>We upload and store it</h3><p>Your file is saved straight to secure cloud storage, with a progress bar so you can watch it land.</p></div></div>
+      <div class="step"><div class="num">03</div><div class="step-body"><h3>Get your link</h3><p>Copy the share link, the direct file link, or a ready-made embed snippet for your own website.</p></div></div>
     </div>
   </section>
 
@@ -388,6 +405,12 @@ function extOf(name){
   const m = /\.([a-zA-Z0-9]+)$/.exec(name);
   return m ? m[1].toUpperCase().slice(0,4) : 'FILE';
 }
+function fileExt(fileName, mimeType){
+  const m = /\.([a-zA-Z0-9]+)$/.exec(fileName || '');
+  if(m) return m[1].toLowerCase();
+  if(mimeType && mimeType.includes('/')) return mimeType.split('/')[1].toLowerCase().replace(/[^a-z0-9]/g,'') || 'file';
+  return 'file';
+}
 function relTime(iso){
   const d = (Date.now() - new Date(iso).getTime())/1000;
   if(d<60) return 'just now';
@@ -398,11 +421,19 @@ function relTime(iso){
 function rawUrl(path){
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path.split('/').map(encodeURIComponent).join('/')}`;
 }
-function shareUrl(slug){
-  const u = new URL(location.href);
-  u.search = '?s='+slug;
-  u.hash = '';
-  return u.toString();
+// the folder Link Share is deployed in, e.g. "/" at a domain root, or "/repo/" on a project subpath
+const BASE_PATH = (()=>{
+  const parts = location.pathname.split('/');
+  if(/\.[a-zA-Z0-9]+$/.test(parts[parts.length-1])) parts.pop();
+  let base = parts.join('/');
+  if(!base.endsWith('/')) base += '/';
+  return base;
+})();
+function shareUrl(slug, fileName, mimeType){
+  return `${location.origin}${BASE_PATH}${slug}.${fileExt(fileName, mimeType)}`;
+}
+function shareHref(slug, fileName, mimeType){
+  return `${BASE_PATH}${slug}.${fileExt(fileName, mimeType)}`;
 }
 function toast(msg){
   const t = document.getElementById('toast');
@@ -623,7 +654,7 @@ async function uploadOne(file, expiryMs, listed, forcedSlug){
   setStatus(el, 'done', 'Done — link ready below.');
   const linksBox = el.querySelector('.q-links');
   linksBox.classList.remove('hidden');
-  const su = shareUrl(slug);
+  const su = shareUrl(slug, file.name, file.type);
   const ru = rawUrl(path);
   currentBatch.push({ name: file.name, url: ru });
   if(currentBatch.length > 1) batchBar.classList.remove('hidden');
@@ -681,7 +712,7 @@ async function loadGallery(){
   const nowIso = new Date().toISOString();
   const { data, error } = await supabase
     .from(TABLE)
-    .select('slug,file_name,category,size_bytes,downloads,created_at,storage_path,thumb_path')
+    .select('slug,file_name,mime_type,category,size_bytes,downloads,created_at,storage_path,thumb_path')
     .eq('public_listed', true)
     .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
     .order('created_at', { ascending:false })
@@ -694,7 +725,7 @@ async function loadGallery(){
     const thumb = row.category==='image'
       ? `<img src="${rawUrl(row.thumb_path || row.storage_path)}" alt="" loading="lazy">`
       : iconSvg(row.category);
-    return `<a class="g-card" href="?s=${row.slug}">
+    return `<a class="g-card" href="${shareHref(row.slug, row.file_name, row.mime_type)}">
       <div class="g-thumb">${thumb}</div>
       <div class="g-body">
         <div class="g-name">${escapeHtml(row.file_name)}</div>
@@ -715,16 +746,16 @@ async function showSharePage(slug){
   const { data, error } = await supabase.from(TABLE).select('*').eq('slug', slug).single();
 
   if(error || !data){
-    content.innerHTML = `<div class="status-msg">This link doesn't exist, or the file was removed.<br><a class="back-home" href="?">← Upload a file instead</a></div>`;
+    content.innerHTML = `<div class="status-msg">This link doesn't exist, or the file was removed.<br><a class="back-home" href="${BASE_PATH}">← Upload a file instead</a></div>`;
     return;
   }
   if(data.expires_at && new Date(data.expires_at) < new Date()){
-    content.innerHTML = `<div class="status-msg">This link has expired.<br><a class="back-home" href="?">← Upload a file instead</a></div>`;
+    content.innerHTML = `<div class="status-msg">This link has expired.<br><a class="back-home" href="${BASE_PATH}">← Upload a file instead</a></div>`;
     return;
   }
 
   const ru = rawUrl(data.storage_path);
-  const su = shareUrl(data.slug);
+  const su = shareUrl(data.slug, data.file_name, data.mime_type);
   let preview = `<div class="file-badge">${extOf(data.file_name)}</div>`;
   if(data.category==='image') preview = `<div class="share-preview"><img src="${ru}" alt="${escapeHtml(data.file_name)}"></div>`;
   if(data.category==='video') preview = `<div class="share-preview"><video src="${ru}" controls></video></div>`;
@@ -751,7 +782,7 @@ async function showSharePage(slug){
       </div>
       <div id="qr-box"></div>
     </div>
-    <a class="back-home" href="?">← Upload your own file</a>
+    <a class="back-home" href="${BASE_PATH}">← Upload your own file</a>
   `;
   wireCopyButtons(content);
 
@@ -788,7 +819,7 @@ function renderAdminLogin(){
       <input type="password" id="adminPass" placeholder="Passphrase">
       <button class="btn btn-primary" id="adminSubmit" style="width:100%;">Sign in</button>
       <div id="adminErr" class="rate-note hidden" style="margin-top:10px;"></div>
-      <a class="back-home" href="?">← Back to Link Share</a>
+      <a class="back-home" href="${BASE_PATH}">← Back to Link Share</a>
     </div>`;
   document.getElementById('adminSubmit').addEventListener('click', adminLogin);
   document.getElementById('adminPass').addEventListener('keydown', e=>{ if(e.key==='Enter') adminLogin(); });
@@ -812,7 +843,7 @@ async function renderAdminPanel(){
     <div class="wrap-wide">
       <div class="admin-header">
         <h2 class="section-title" style="margin:0;">Manage uploads</h2>
-        <a class="back-home" href="?">← Back to site</a>
+        <a class="back-home" href="${BASE_PATH}">← Back to site</a>
       </div>
       <div id="adminList"><p class="empty-note">Loading…</p></div>
       <div class="rotate-box">
@@ -886,11 +917,21 @@ async function deleteStorageObject(path){
 
 /* ---------- router ---------- */
 const params = new URLSearchParams(location.search);
-const slug = params.get('s');
+const legacySlug = params.get('s');
+const relPath = location.pathname.startsWith(BASE_PATH)
+  ? location.pathname.slice(BASE_PATH.length)
+  : location.pathname.replace(/^\//,'');
+const RESERVED_PATHS = ['developers.html','docs.html','index.html'];
+const pathMatch = (relPath && !RESERVED_PATHS.includes(relPath))
+  ? /^([a-zA-Z0-9_-]{1,60})\.[a-zA-Z0-9]+$/.exec(relPath)
+  : null;
+
 if(params.get('admin')){
   showAdmin();
-}else if(slug){
-  showSharePage(slug);
+}else if(pathMatch){
+  showSharePage(pathMatch[1]);
+}else if(legacySlug){
+  showSharePage(legacySlug); // supports links shared before the URL format changed
 }else{
   loadGallery();
 }
