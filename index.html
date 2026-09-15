@@ -1,0 +1,899 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Link Share — upload anything, share instantly</title>
+<meta name="description" content="Upload any file and get a link you can share or embed anywhere. No account needed.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232451FF' stroke-width='2.4'%3E%3Cpath d='M10 14a4 4 0 0 0 5.7.3l3-3a4 4 0 0 0-5.7-5.7l-1.6 1.6'/%3E%3Cpath d='M14 10a4 4 0 0 0-5.7-.3l-3 3a4 4 0 0 0 5.7 5.7l1.6-1.6'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root{
+    --bg:#F7F6F2; --bg-alt:#FFFFFF; --ink:#1B1B1F; --ink-soft:#6B6960;
+    --line:#E3E0D8; --accent:#2451FF; --accent-ink:#0E2FA6; --amber:#C97C1D;
+    --success:#1B9E67; --danger:#C23B3B; --radius:10px;
+    --shadow:0 1px 2px rgba(20,20,20,.04);
+  }
+  html[data-theme="dark"]{
+    --bg:#0F1117; --bg-alt:#161822; --ink:#F1F0EC; --ink-soft:#9A98A0;
+    --line:#2A2C36; --accent:#6E93FF; --accent-ink:#AEC1FF; --amber:#E0A64B;
+    --success:#39C983; --danger:#FF7373;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:'Public Sans',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased; transition:background .25s,color .25s;
+  }
+  a{color:var(--accent);}
+  .wrap{max-width:760px; margin:0 auto; padding:0 24px;}
+  .wrap-wide{max-width:980px; margin:0 auto; padding:0 24px;}
+
+  /* header */
+  header{display:flex; align-items:center; justify-content:space-between; padding:22px 24px; max-width:980px; margin:0 auto;}
+  .brand{display:flex; align-items:center; gap:10px; font-family:'Fraunces',serif; font-size:20px; font-weight:600; letter-spacing:-.01em;}
+  .brand svg{flex:none;}
+  nav{display:flex; align-items:center; gap:18px;}
+  nav a{color:var(--ink-soft); text-decoration:none; font-size:14px; font-weight:500;}
+  nav a:hover{color:var(--ink);}
+  .theme-btn{
+    border:1px solid var(--line); background:var(--bg-alt); color:var(--ink);
+    width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+  }
+  .theme-btn:hover{border-color:var(--accent);}
+
+  /* hero */
+  .hero{padding:36px 0 8px; text-align:center;}
+  .hero h1{
+    font-family:'Fraunces',serif; font-weight:500; font-size:44px; line-height:1.12;
+    letter-spacing:-.015em; margin:0 0 14px;
+  }
+  .hero p.sub{color:var(--ink-soft); font-size:17px; line-height:1.6; margin:0 auto 30px; max-width:480px;}
+
+  /* dropzone */
+  .dropzone{
+    border:1.5px dashed var(--line); border-radius:var(--radius); background:var(--bg-alt);
+    padding:44px 24px; text-align:center; cursor:pointer; position:relative;
+    transition:border-color .15s, background .15s;
+  }
+  .dropzone.drag{border-color:var(--accent); background:color-mix(in srgb, var(--accent) 6%, var(--bg-alt));}
+  .dropzone svg{margin-bottom:12px;}
+  .dropzone .dz-title{font-weight:600; font-size:16px; margin-bottom:4px;}
+  .dropzone .dz-sub{color:var(--ink-soft); font-size:13.5px;}
+  .dropzone input[type=file]{display:none;}
+
+  .upload-row{display:flex; align-items:center; justify-content:center; gap:14px; margin-top:16px; flex-wrap:wrap;}
+  .expiry{display:flex; align-items:center; gap:8px; font-size:13.5px; color:var(--ink-soft);}
+  select, .btn, .copy-btn{
+    font-family:inherit; font-size:14px; border-radius:8px; border:1px solid var(--line);
+    background:var(--bg-alt); color:var(--ink); padding:9px 14px; cursor:pointer;
+  }
+  select:focus, .btn:focus, .copy-btn:focus, input:focus, .dropzone:focus-visible{
+    outline:2px solid var(--accent); outline-offset:2px;
+  }
+  label.gallery-opt{display:flex; align-items:center; gap:7px; font-size:13.5px; color:var(--ink-soft); cursor:pointer;}
+
+  .btn-primary{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600;}
+  .btn-primary:hover{background:var(--accent-ink); border-color:var(--accent-ink);}
+
+  /* queue */
+  #queue{margin-top:26px; display:flex; flex-direction:column; gap:14px;}
+  .q-item{border:1px solid var(--line); border-radius:var(--radius); background:var(--bg-alt); padding:16px; text-align:left;}
+  .q-head{display:flex; align-items:center; gap:12px;}
+  .q-icon{width:38px; height:38px; border-radius:8px; background:var(--bg); display:flex; align-items:center; justify-content:center; flex:none; overflow:hidden;}
+  .q-icon img{width:100%; height:100%; object-fit:cover;}
+  .q-name{font-weight:600; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .q-meta{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--ink-soft); margin-top:2px;}
+  .q-bar-track{height:5px; background:var(--line); border-radius:4px; margin-top:10px; overflow:hidden;}
+  .q-bar{height:100%; width:0%; background:var(--accent); transition:width .12s linear;}
+  .q-status{font-size:12.5px; color:var(--ink-soft); margin-top:8px;}
+  .q-status.done{color:var(--success);}
+  .q-status.error{color:var(--danger);}
+
+  .q-links{margin-top:12px; display:flex; flex-direction:column; gap:8px;}
+  .link-row{display:flex; align-items:center; gap:8px; border:1px solid var(--line); border-radius:7px; padding:7px 10px; background:var(--bg);}
+  .link-row .link-label{font-size:11.5px; color:var(--ink-soft); font-weight:600; min-width:58px; text-transform:none;}
+  .link-row input{
+    flex:1; border:none; background:transparent; color:var(--ink); font-family:'JetBrains Mono',monospace;
+    font-size:12.5px; min-width:0;
+  }
+  .link-row input:focus{outline:none;}
+  .copy-btn{padding:5px 10px; font-size:12px; flex:none;}
+  .copy-btn.copied{border-color:var(--success); color:var(--success);}
+
+  /* sections */
+  section{padding:56px 0;}
+  .section-title{font-family:'Fraunces',serif; font-size:26px; font-weight:500; margin:0 0 26px; letter-spacing:-.01em;}
+  .divider{border:none; border-top:1px solid var(--line); margin:0;}
+
+  .steps{display:flex; flex-direction:column; gap:22px;}
+  .step{display:flex; gap:16px;}
+  .step .num{font-family:'JetBrains Mono',monospace; color:var(--accent); font-size:14px; padding-top:2px; flex:none; width:26px;}
+  .step h3{margin:0 0 4px; font-size:15.5px; font-weight:600;}
+  .step p{margin:0; color:var(--ink-soft); font-size:14.5px; line-height:1.55;}
+
+  .feature-list{display:flex; flex-direction:column;}
+  .feature{display:flex; gap:14px; padding:16px 0; border-top:1px solid var(--line);}
+  .feature:first-child{border-top:none;}
+  .feature svg{flex:none; margin-top:2px; color:var(--accent);}
+  .feature h4{margin:0 0 3px; font-size:15px; font-weight:600;}
+  .feature p{margin:0; color:var(--ink-soft); font-size:14px; line-height:1.55;}
+
+  .gallery{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px;}
+  .g-card{
+    border:1px solid var(--line); border-radius:var(--radius); background:var(--bg-alt);
+    text-decoration:none; color:var(--ink); overflow:hidden; display:flex; flex-direction:column;
+    transition:border-color .15s;
+  }
+  .g-card:hover{border-color:var(--accent);}
+  .g-thumb{aspect-ratio:1.3; background:var(--bg); display:flex; align-items:center; justify-content:center; overflow:hidden;}
+  .g-thumb img{width:100%; height:100%; object-fit:cover;}
+  .g-body{padding:10px 12px;}
+  .g-name{font-size:12.5px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .g-meta{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--ink-soft); margin-top:3px;}
+  .empty-note{color:var(--ink-soft); font-size:14px;}
+
+  footer{border-top:1px solid var(--line); padding:28px 0 40px; margin-top:20px;}
+  .footer-row{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;}
+  .footer-credit{font-size:13.5px; color:var(--ink-soft);}
+  .footer-credit b{color:var(--ink); font-weight:600;}
+  .insta-btn{
+    display:inline-flex; align-items:center; gap:8px; text-decoration:none; color:var(--ink);
+    border:1px solid var(--line); border-radius:20px; padding:8px 16px 8px 12px; font-size:13.5px; font-weight:600;
+    transition:border-color .15s, color .15s;
+  }
+  .insta-btn:hover{border-color:var(--accent); color:var(--accent);}
+
+  /* toast */
+  #toast{
+    position:fixed; bottom:24px; left:50%; transform:translate(-50%,20px); background:var(--ink); color:var(--bg);
+    padding:10px 18px; border-radius:8px; font-size:13.5px; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s;
+    z-index:50;
+  }
+  html[data-theme="dark"] #toast{background:var(--bg-alt); color:var(--ink); border:1px solid var(--line);}
+  #toast.show{opacity:1; transform:translate(-50%,0);}
+
+  /* share page */
+  .share-card{border:1px solid var(--line); border-radius:var(--radius); background:var(--bg-alt); padding:26px; text-align:center;}
+  .share-preview{max-width:100%; border-radius:8px; margin-bottom:18px; background:var(--bg);}
+  .share-preview img, .share-preview video{max-width:100%; max-height:420px; border-radius:8px; display:block; margin:0 auto;}
+  .file-badge{
+    width:64px; height:64px; border-radius:10px; background:var(--bg); display:flex; align-items:center;
+    justify-content:center; margin:0 auto 14px; font-family:'JetBrains Mono',monospace; font-weight:600;
+    font-size:12px; color:var(--accent); border:1px solid var(--line);
+  }
+  .share-name{font-weight:600; font-size:16px; margin-bottom:4px; word-break:break-word;}
+  .share-meta{font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--ink-soft); margin-bottom:20px;}
+  .share-actions{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-bottom:8px;}
+  #qr-box{margin-top:18px; display:flex; justify-content:center;}
+  .back-home{display:inline-block; margin-top:18px; font-size:13.5px;}
+  .status-msg{padding:60px 20px; text-align:center; color:var(--ink-soft);}
+
+  .slug-row{display:flex; align-items:center; gap:8px; margin-top:14px; justify-content:center; flex-wrap:wrap;}
+  .slug-row label{font-size:13.5px; color:var(--ink-soft);}
+  .slug-row input{
+    font-family:'JetBrains Mono',monospace; font-size:13px; border:1px solid var(--line); border-radius:8px;
+    background:var(--bg-alt); color:var(--ink); padding:8px 10px; width:170px;
+  }
+  .honeypot{position:absolute; left:-9999px; width:1px; height:1px; opacity:0;}
+  .batch-bar{display:flex; justify-content:center; margin-top:14px;}
+  .rate-note{font-size:12.5px; color:var(--danger); margin-top:10px;}
+
+  /* admin */
+  #adminView{max-width:820px; margin:0 auto; padding:60px 24px;}
+  .admin-login{max-width:340px; margin:60px auto; text-align:center;}
+  .admin-login h2{font-family:'Fraunces',serif; font-weight:500; margin-bottom:6px;}
+  .admin-login p{color:var(--ink-soft); font-size:13.5px; margin-bottom:20px;}
+  .admin-login input{width:100%; margin-bottom:12px; padding:10px 12px; border-radius:8px; border:1px solid var(--line); background:var(--bg-alt); color:var(--ink); font-size:14px;}
+  .admin-row{display:flex; align-items:center; gap:12px; border-top:1px solid var(--line); padding:14px 0;}
+  .admin-row:first-of-type{border-top:none;}
+  .admin-thumb{width:44px; height:44px; border-radius:7px; background:var(--bg-alt); border:1px solid var(--line); flex:none; display:flex; align-items:center; justify-content:center; overflow:hidden;}
+  .admin-thumb img{width:100%; height:100%; object-fit:cover;}
+  .admin-info{flex:1; min-width:0;}
+  .admin-name{font-size:14px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .admin-meta{font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--ink-soft);}
+  .admin-actions{display:flex; align-items:center; gap:10px; flex:none;}
+  .admin-actions label{font-size:12px; color:var(--ink-soft); display:flex; align-items:center; gap:5px;}
+  .btn-danger{border-color:var(--danger); color:var(--danger);}
+  .btn-danger:hover{background:var(--danger); color:#fff;}
+  .admin-header{display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;}
+  .rotate-box{display:flex; gap:8px; margin-top:26px; border-top:1px solid var(--line); padding-top:20px;}
+  .rotate-box input{flex:1;}
+
+  .hidden{display:none !important;}
+  @media (max-width:560px){
+    .hero h1{font-size:32px;}
+    header{padding:18px 20px;}
+    .footer-row{justify-content:center; text-align:center;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round">
+      <path d="M10 14a4 4 0 0 0 5.7.3l3-3a4 4 0 0 0-5.7-5.7l-1.6 1.6"/>
+      <path d="M14 10a4 4 0 0 0-5.7-.3l-3 3a4 4 0 0 0 5.7 5.7l1.6-1.6"/>
+    </svg>
+    Link Share
+  </div>
+  <nav>
+    <a href="#how">How it works</a>
+    <a href="#gallery">Recent uploads</a>
+    <a href="developers.html">Developers</a>
+    <a href="docs.html">Docs</a>
+    <button class="theme-btn" id="themeToggle" aria-label="Toggle dark mode">
+      <svg id="themeIcon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4.5"/><path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
+    </button>
+  </nav>
+</header>
+
+<main id="homeView" class="wrap">
+
+  <section class="hero">
+    <h1>Send any file with one link.</h1>
+    <p class="sub">Drop in a photo, video, or document. Link Share stores it and hands you a link back — ready to share or drop straight into your own site.</p>
+
+    <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload files">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 16V4M8 8l4-4 4 4"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>
+      </svg>
+      <div class="dz-title">Drag files here, or click to browse</div>
+      <div class="dz-sub">Any file type · up to 200 MB each · no account needed</div>
+      <input type="file" id="fileInput" multiple>
+    </div>
+
+    <div class="upload-row">
+      <div class="expiry">
+        <label for="expirySelect">Link expires</label>
+        <select id="expirySelect">
+          <option value="0">Never</option>
+          <option value="3600000">In 1 hour</option>
+          <option value="86400000">In 1 day</option>
+          <option value="604800000" selected>In 7 days</option>
+          <option value="2592000000">In 30 days</option>
+        </select>
+      </div>
+      <label class="gallery-opt">
+        <input type="checkbox" id="galleryOpt">
+        List in public gallery
+      </label>
+    </div>
+
+    <div class="slug-row">
+      <label for="customSlug">Custom link (optional)</label>
+      <input type="text" id="customSlug" placeholder="e.g. my-demo" maxlength="40">
+    </div>
+    <input type="text" id="hpField" class="honeypot" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+    <div id="queue"></div>
+    <div class="batch-bar hidden" id="batchBar">
+      <button class="btn" id="zipBtn">Download all as .zip</button>
+    </div>
+    <div class="rate-note hidden" id="rateNote">You're uploading quickly — please wait a moment before adding more files.</div>
+  </section>
+
+  <hr class="divider">
+
+  <section id="how">
+    <h2 class="section-title">How it works</h2>
+    <div class="steps">
+      <div class="step"><div class="num">01</div><div><h3>Drop your file</h3><p>Drag it into the box above, or click to choose one or several files from your device.</p></div></div>
+      <div class="step"><div class="num">02</div><div><h3>We upload and store it</h3><p>Your file is saved straight to secure cloud storage, with a progress bar so you can watch it land.</p></div></div>
+      <div class="step"><div class="num">03</div><div><h3>Get your link</h3><p>Copy the share link, the direct file link, or a ready-made embed snippet for your own website.</p></div></div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <section>
+    <h2 class="section-title">What you get</h2>
+    <div class="feature-list">
+      <div class="feature">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12h8M12 8v8"/></svg>
+        <div><h4>Any file, any size up to 200 MB</h4><p>Images, video, audio, PDFs, zips — Link Share detects the type and previews it automatically.</p></div>
+      </div>
+      <div class="feature">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg>
+        <div><h4>Instant, direct links</h4><p>Every upload gets a share page link and a raw file link you can hotlink from anywhere.</p></div>
+      </div>
+      <div class="feature">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 8V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h2"/><rect x="9" y="9" width="12" height="12" rx="2"/></svg>
+        <div><h4>Embed on your own website</h4><p>Ready-to-paste &lt;img&gt;, &lt;video&gt; or link tags, so you can drop the file straight into your own page.</p></div>
+      </div>
+      <div class="feature">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><path d="M14 14h2m2 0h2M14 18h2m2 0h2"/></svg>
+        <div><h4>QR code on every link</h4><p>Scan straight from the share page — handy for print, presentations, or handing off on the go.</p></div>
+      </div>
+      <div class="feature">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        <div><h4>Links that can expire</h4><p>Set a file to disappear after an hour, a day, a week, or keep it live for good.</p></div>
+      </div>
+      <div class="feature">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
+        <div><h4>A live download counter</h4><p>Every share page shows how many times a file has been opened.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <section id="gallery" class="wrap-wide" style="padding-left:0;padding-right:0;">
+    <div class="wrap-wide">
+      <h2 class="section-title">Recent uploads</h2>
+      <p style="color:var(--ink-soft); font-size:13.5px; margin:-14px 0 22px;">Only files the uploader chose to list publicly appear here.</p>
+      <div id="galleryGrid" class="gallery"><p class="empty-note">Loading…</p></div>
+    </div>
+  </section>
+
+</main>
+
+<main id="shareView" class="wrap hidden" style="padding-top:36px; padding-bottom:60px;">
+  <div id="shareContent"></div>
+</main>
+
+<main id="adminView" class="hidden">
+  <div id="adminContent"></div>
+</main>
+
+<footer>
+  <div class="wrap-wide footer-row">
+    <div class="footer-credit">Created by <b>Symoh Tech</b></div>
+    <a class="insta-btn" href="https://www.instagram.com/stacy.symoh" target="_blank" rel="noopener">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1"/></svg>
+      @stacy.symoh
+    </a>
+  </div>
+</footer>
+
+<div id="toast"></div>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+const SUPABASE_URL = 'https://fgetfjswkwyenfdpcxar.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnZXRmanN3a3d5ZW5mZHBjeGFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgxODI4MzcsImV4cCI6MjEwMzc1ODgzN30.oi6eC-JSxdAoWTclkbfKAcq1yk5fVvF_L2GLY45W5OY';
+const BUCKET = 'linkshare';
+const TABLE = 'linkshare_files';
+const MAX_SIZE = 200 * 1024 * 1024;
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ---------- helpers ---------- */
+function categoryFor(mime){
+  if(!mime) return 'file';
+  if(mime.startsWith('image/')) return 'image';
+  if(mime.startsWith('video/')) return 'video';
+  if(mime.startsWith('audio/')) return 'audio';
+  return 'file';
+}
+function formatBytes(b){
+  if(b===0) return '0 B';
+  const u=['B','KB','MB','GB']; const i=Math.min(Math.floor(Math.log(b)/Math.log(1024)), u.length-1);
+  return (b/Math.pow(1024,i)).toFixed(i===0?0:1)+' '+u[i];
+}
+function extOf(name){
+  const m = /\.([a-zA-Z0-9]+)$/.exec(name);
+  return m ? m[1].toUpperCase().slice(0,4) : 'FILE';
+}
+function relTime(iso){
+  const d = (Date.now() - new Date(iso).getTime())/1000;
+  if(d<60) return 'just now';
+  if(d<3600) return Math.floor(d/60)+'m ago';
+  if(d<86400) return Math.floor(d/3600)+'h ago';
+  return Math.floor(d/86400)+'d ago';
+}
+function rawUrl(path){
+  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path.split('/').map(encodeURIComponent).join('/')}`;
+}
+function shareUrl(slug){
+  const u = new URL(location.href);
+  u.search = '?s='+slug;
+  u.hash = '';
+  return u.toString();
+}
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+async function copyText(text, btn){
+  try{
+    await navigator.clipboard.writeText(text);
+    toast('Copied to clipboard');
+    if(btn){
+      const old = btn.textContent;
+      btn.textContent = 'Copied'; btn.classList.add('copied');
+      setTimeout(()=>{btn.textContent = old; btn.classList.remove('copied');}, 1500);
+    }
+  }catch(e){ toast('Could not copy — select and copy manually'); }
+}
+window.copyText = copyText;
+
+/* ---------- theme ---------- */
+const themeBtn = document.getElementById('themeToggle');
+themeBtn.addEventListener('click', ()=>{
+  const html = document.documentElement;
+  const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+});
+if(matchMedia('(prefers-color-scheme: dark)').matches){
+  document.documentElement.setAttribute('data-theme','dark');
+}
+
+/* ---------- upload ---------- */
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const queueEl = document.getElementById('queue');
+const expirySelect = document.getElementById('expirySelect');
+const galleryOpt = document.getElementById('galleryOpt');
+
+dropzone.addEventListener('click', ()=>fileInput.click());
+dropzone.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); fileInput.click(); }});
+['dragenter','dragover'].forEach(ev=>dropzone.addEventListener(ev, e=>{ e.preventDefault(); dropzone.classList.add('drag'); }));
+['dragleave','drop'].forEach(ev=>dropzone.addEventListener(ev, e=>{ e.preventDefault(); dropzone.classList.remove('drag'); }));
+dropzone.addEventListener('drop', e=>{
+  const files = e.dataTransfer.files;
+  if(files && files.length) handleFiles(files);
+});
+fileInput.addEventListener('change', ()=>{
+  if(fileInput.files.length) handleFiles(fileInput.files);
+  fileInput.value = '';
+});
+
+const customSlugInput = document.getElementById('customSlug');
+const hpField = document.getElementById('hpField');
+const rateNote = document.getElementById('rateNote');
+const batchBar = document.getElementById('batchBar');
+const zipBtn = document.getElementById('zipBtn');
+let uploadTimestamps = [];
+let currentBatch = [];
+
+function withinRateLimit(){
+  const now = Date.now();
+  uploadTimestamps = uploadTimestamps.filter(t => now - t < 10*60*1000);
+  return uploadTimestamps.length < 12;
+}
+
+async function handleFiles(fileList){
+  if(hpField.value){ return; } // honeypot tripped — silently ignore
+  if(!withinRateLimit()){
+    rateNote.classList.remove('hidden');
+    setTimeout(()=>rateNote.classList.add('hidden'), 4000);
+    return;
+  }
+  const expiryMs = Number(expirySelect.value);
+  const listed = galleryOpt.checked;
+  const files = Array.from(fileList);
+  const customRaw = customSlugInput.value.trim().toLowerCase().replace(/[^a-z0-9-]/g,'');
+  currentBatch = [];
+  batchBar.classList.add('hidden');
+
+  for(let i=0; i<files.length; i++){
+    const file = files[i];
+    if(file.size > MAX_SIZE){
+      const el = renderQueueItem(file);
+      setStatus(el, 'error', `Too large — max ${formatBytes(MAX_SIZE)} per file.`);
+      continue;
+    }
+    uploadTimestamps.push(Date.now());
+    let forcedSlug = null;
+    if(customRaw && i===0){
+      const { data: existing } = await supabase.from(TABLE).select('slug').eq('slug', customRaw).maybeSingle();
+      if(existing){
+        toast(`"${customRaw}" is already taken — using a random link instead.`);
+      }else{
+        forcedSlug = customRaw;
+      }
+    }
+    uploadOne(file, expiryMs, listed, forcedSlug);
+  }
+  customSlugInput.value = '';
+}
+
+zipBtn.addEventListener('click', async ()=>{
+  zipBtn.disabled = true;
+  zipBtn.textContent = 'Zipping…';
+  try{
+    const zip = new JSZip();
+    await Promise.all(currentBatch.map(async item=>{
+      const res = await fetch(item.url);
+      const blob = await res.blob();
+      zip.file(item.name, blob);
+    }));
+    const content = await zip.generateAsync({ type:'blob' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(content);
+    a.download = 'link-share-files.zip';
+    a.click();
+  }catch(e){
+    toast('Could not build the zip — try downloading files individually.');
+  }
+  zipBtn.disabled = false;
+  zipBtn.textContent = 'Download all as .zip';
+});
+
+function renderQueueItem(file){
+  const el = document.createElement('div');
+  el.className = 'q-item';
+  const previewUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : null;
+  el.innerHTML = `
+    <div class="q-head">
+      <div class="q-icon">${previewUrl ? `<img src="${previewUrl}" alt="">` : iconSvg(categoryFor(file.type))}</div>
+      <div style="flex:1; min-width:0;">
+        <div class="q-name">${escapeHtml(file.name)}</div>
+        <div class="q-meta">${formatBytes(file.size)} · ${file.type || 'unknown type'}</div>
+      </div>
+    </div>
+    <div class="q-bar-track"><div class="q-bar"></div></div>
+    <div class="q-status">Uploading…</div>
+    <div class="q-links hidden"></div>
+  `;
+  queueEl.prepend(el);
+  return el;
+}
+function iconSvg(category){
+  const icons = {
+    image:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5-9 9"/></svg>',
+    video:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><rect x="3" y="5" width="14" height="14" rx="2"/><path d="M17 10l4-3v10l-4-3"/></svg>',
+    audio:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M9 18V6l10-2v14"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>',
+    file:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>'
+  };
+  return icons[category] || icons.file;
+}
+function setStatus(el, kind, text){
+  const s = el.querySelector('.q-status');
+  s.textContent = text;
+  s.className = 'q-status ' + (kind || '');
+}
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function makeThumbnail(file){
+  return new Promise(resolve=>{
+    if(!file.type.startsWith('image/')){ resolve(null); return; }
+    const img = new Image();
+    img.onload = ()=>{
+      const maxDim = 480;
+      const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+      const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      canvas.toBlob(blob=>resolve(blob), 'image/jpeg', 0.8);
+    };
+    img.onerror = ()=>resolve(null);
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+async function uploadOne(file, expiryMs, listed, forcedSlug){
+  const el = renderQueueItem(file);
+  const bar = el.querySelector('.q-bar');
+  const slug = forcedSlug || crypto.randomUUID().replace(/-/g,'').slice(0,8);
+  const category = categoryFor(file.type);
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+  const path = `${category}/${slug}-${safeName}`;
+
+  try{
+    await xhrUpload(path, file, pct=>{ bar.style.width = pct+'%'; });
+  }catch(err){
+    setStatus(el, 'error', 'Upload failed — check your connection and try again.');
+    return;
+  }
+
+  let thumb_path = null;
+  const thumbBlob = await makeThumbnail(file);
+  if(thumbBlob){
+    thumb_path = `thumb/${slug}-thumb.jpg`;
+    try{ await xhrUpload(thumb_path, thumbBlob, ()=>{}); }
+    catch(e){ thumb_path = null; }
+  }
+
+  const expires_at = expiryMs ? new Date(Date.now()+expiryMs).toISOString() : null;
+  const { error } = await supabase.from(TABLE).insert({
+    slug, file_name: file.name, file_type: file.type || 'application/octet-stream',
+    mime_type: file.type || null, size_bytes: file.size, storage_path: path,
+    thumb_path, category, expires_at, public_listed: !!listed
+  });
+
+  if(error){
+    const msg = /rate.?limit/i.test(error.message||'')
+      ? 'Link Share is busy right now — please try again in a minute.'
+      : 'Saved the file but could not create the link. Try again.';
+    setStatus(el, 'error', msg);
+    return;
+  }
+
+  setStatus(el, 'done', 'Done — link ready below.');
+  const linksBox = el.querySelector('.q-links');
+  linksBox.classList.remove('hidden');
+  const su = shareUrl(slug);
+  const ru = rawUrl(path);
+  currentBatch.push({ name: file.name, url: ru });
+  if(currentBatch.length > 1) batchBar.classList.remove('hidden');
+  const embed = category==='image' ? `<img src="${ru}" alt="">`
+    : category==='video' ? `<video src="${ru}" controls></video>`
+    : category==='audio' ? `<audio src="${ru}" controls></audio>`
+    : `<a href="${ru}">${escapeHtml(file.name)}</a>`;
+  linksBox.innerHTML = linkRow('Share', su) + linkRow('Direct', ru) + linkRow('Embed', embed);
+  wireCopyButtons(linksBox);
+
+  loadGallery();
+}
+
+function linkRow(label, value){
+  const id = 'v'+Math.random().toString(36).slice(2,9);
+  return `<div class="link-row">
+    <span class="link-label">${label}</span>
+    <input id="${id}" type="text" readonly value="${escapeHtml(value)}">
+    <button class="copy-btn" data-target="${id}">Copy</button>
+  </div>`;
+}
+function wireCopyButtons(scope){
+  scope.querySelectorAll('.copy-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const input = document.getElementById(btn.dataset.target);
+      copyText(input.value, btn);
+    });
+  });
+}
+
+function xhrUpload(path, file, onProgress){
+  return new Promise((resolve, reject)=>{
+    const url = `${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path.split('/').map(encodeURIComponent).join('/')}`;
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('Authorization', 'Bearer '+SUPABASE_ANON_KEY);
+    xhr.setRequestHeader('apikey', SUPABASE_ANON_KEY);
+    xhr.setRequestHeader('x-upsert', 'false');
+    xhr.setRequestHeader('content-type', file.type || 'application/octet-stream');
+    xhr.upload.onprogress = e=>{
+      if(e.lengthComputable) onProgress(Math.round(e.loaded/e.total*100));
+    };
+    xhr.onload = ()=>{
+      if(xhr.status >= 200 && xhr.status < 300){ onProgress(100); resolve(); }
+      else reject(new Error('HTTP '+xhr.status));
+    };
+    xhr.onerror = ()=>reject(new Error('network error'));
+    xhr.send(file);
+  });
+}
+
+/* ---------- recent gallery ---------- */
+async function loadGallery(){
+  const grid = document.getElementById('galleryGrid');
+  const nowIso = new Date().toISOString();
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select('slug,file_name,category,size_bytes,downloads,created_at,storage_path,thumb_path')
+    .eq('public_listed', true)
+    .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
+    .order('created_at', { ascending:false })
+    .limit(12);
+
+  if(error){ grid.innerHTML = '<p class="empty-note">Could not load recent uploads.</p>'; return; }
+  if(!data || !data.length){ grid.innerHTML = '<p class="empty-note">No public uploads yet — be the first to share one.</p>'; return; }
+
+  grid.innerHTML = data.map(row=>{
+    const thumb = row.category==='image'
+      ? `<img src="${rawUrl(row.thumb_path || row.storage_path)}" alt="" loading="lazy">`
+      : iconSvg(row.category);
+    return `<a class="g-card" href="?s=${row.slug}">
+      <div class="g-thumb">${thumb}</div>
+      <div class="g-body">
+        <div class="g-name">${escapeHtml(row.file_name)}</div>
+        <div class="g-meta">${formatBytes(row.size_bytes||0)} · ${relTime(row.created_at)}</div>
+      </div>
+    </a>`;
+  }).join('');
+}
+
+/* ---------- share page ---------- */
+async function showSharePage(slug){
+  document.getElementById('homeView').classList.add('hidden');
+  const view = document.getElementById('shareView');
+  view.classList.remove('hidden');
+  const content = document.getElementById('shareContent');
+  content.innerHTML = '<div class="status-msg">Loading file…</div>';
+
+  const { data, error } = await supabase.from(TABLE).select('*').eq('slug', slug).single();
+
+  if(error || !data){
+    content.innerHTML = `<div class="status-msg">This link doesn't exist, or the file was removed.<br><a class="back-home" href="?">← Upload a file instead</a></div>`;
+    return;
+  }
+  if(data.expires_at && new Date(data.expires_at) < new Date()){
+    content.innerHTML = `<div class="status-msg">This link has expired.<br><a class="back-home" href="?">← Upload a file instead</a></div>`;
+    return;
+  }
+
+  const ru = rawUrl(data.storage_path);
+  const su = shareUrl(data.slug);
+  let preview = `<div class="file-badge">${extOf(data.file_name)}</div>`;
+  if(data.category==='image') preview = `<div class="share-preview"><img src="${ru}" alt="${escapeHtml(data.file_name)}"></div>`;
+  if(data.category==='video') preview = `<div class="share-preview"><video src="${ru}" controls></video></div>`;
+  if(data.category==='audio') preview = `<div class="share-preview" style="padding:24px 0;"><audio src="${ru}" controls style="width:100%;"></audio></div>`;
+
+  const embed = data.category==='image' ? `<img src="${ru}" alt="">`
+    : data.category==='video' ? `<video src="${ru}" controls></video>`
+    : data.category==='audio' ? `<audio src="${ru}" controls></audio>`
+    : `<a href="${ru}">${escapeHtml(data.file_name)}</a>`;
+
+  content.innerHTML = `
+    <div class="share-card">
+      ${preview}
+      <div class="share-name">${escapeHtml(data.file_name)}</div>
+      <div class="share-meta">${formatBytes(data.size_bytes||0)} · ${data.mime_type||'unknown type'} · ${data.downloads||0} download${data.downloads===1?'':'s'}</div>
+      <div class="share-actions">
+        <a class="btn btn-primary" id="downloadBtn" href="${ru}" download="${escapeHtml(data.file_name)}">Download</a>
+        <button class="btn" id="showQr">Show QR code</button>
+      </div>
+      <div class="q-links" style="margin-top:18px;">
+        ${linkRow('Share', su)}
+        ${linkRow('Direct', ru)}
+        ${linkRow('Embed', embed)}
+      </div>
+      <div id="qr-box"></div>
+    </div>
+    <a class="back-home" href="?">← Upload your own file</a>
+  `;
+  wireCopyButtons(content);
+
+  document.getElementById('downloadBtn').addEventListener('click', ()=>{
+    supabase.from(TABLE).update({ downloads: (data.downloads||0)+1 }).eq('slug', data.slug).then(()=>{});
+  });
+
+  document.getElementById('showQr').addEventListener('click', ()=>{
+    const box = document.getElementById('qr-box');
+    if(box.childElementCount){ box.innerHTML=''; return; }
+    if(window.QRCode){
+      new QRCode(box, { text: su, width:140, height:140, colorDark:'#1B1B1F', colorLight:'#ffffff' });
+    }else{
+      box.innerHTML = '<p class="empty-note">QR code unavailable right now.</p>';
+    }
+  });
+}
+
+/* ---------- admin moderation panel ---------- */
+function bcryptLib(){ return window.dcodeIO ? window.dcodeIO.bcrypt : window.bcrypt; }
+
+async function showAdmin(){
+  document.getElementById('homeView').classList.add('hidden');
+  document.getElementById('adminView').classList.remove('hidden');
+  renderAdminLogin();
+}
+
+function renderAdminLogin(){
+  const c = document.getElementById('adminContent');
+  c.innerHTML = `
+    <div class="wrap admin-login">
+      <h2>Moderator sign in</h2>
+      <p>Manage and remove uploaded files.</p>
+      <input type="password" id="adminPass" placeholder="Passphrase">
+      <button class="btn btn-primary" id="adminSubmit" style="width:100%;">Sign in</button>
+      <div id="adminErr" class="rate-note hidden" style="margin-top:10px;"></div>
+      <a class="back-home" href="?">← Back to Link Share</a>
+    </div>`;
+  document.getElementById('adminSubmit').addEventListener('click', adminLogin);
+  document.getElementById('adminPass').addEventListener('keydown', e=>{ if(e.key==='Enter') adminLogin(); });
+}
+
+async function adminLogin(){
+  const pass = document.getElementById('adminPass').value;
+  const err = document.getElementById('adminErr');
+  const bcrypt = bcryptLib();
+  if(!pass || !bcrypt){ err.textContent = 'Enter a passphrase.'; err.classList.remove('hidden'); return; }
+  const { data, error } = await supabase.from('linkshare_admin_access').select('passphrase_hash').eq('id',1).single();
+  if(error || !data || !bcrypt.compareSync(pass, data.passphrase_hash)){
+    err.textContent = 'Incorrect passphrase.'; err.classList.remove('hidden'); return;
+  }
+  renderAdminPanel();
+}
+
+async function renderAdminPanel(){
+  const c = document.getElementById('adminContent');
+  c.innerHTML = `
+    <div class="wrap-wide">
+      <div class="admin-header">
+        <h2 class="section-title" style="margin:0;">Manage uploads</h2>
+        <a class="back-home" href="?">← Back to site</a>
+      </div>
+      <div id="adminList"><p class="empty-note">Loading…</p></div>
+      <div class="rotate-box">
+        <input type="password" id="newPass" placeholder="Set a new passphrase">
+        <button class="btn" id="rotateBtn">Update passphrase</button>
+      </div>
+    </div>`;
+  document.getElementById('rotateBtn').addEventListener('click', rotatePassphrase);
+  loadAdminList();
+}
+
+async function rotatePassphrase(){
+  const val = document.getElementById('newPass').value.trim();
+  const bcrypt = bcryptLib();
+  if(val.length < 6 || !bcrypt){ toast('Passphrase should be at least 6 characters.'); return; }
+  const hash = bcrypt.hashSync(val, 10);
+  const { error } = await supabase.from('linkshare_admin_access').update({ passphrase_hash: hash }).eq('id',1);
+  toast(error ? 'Could not update passphrase.' : 'Passphrase updated.');
+  document.getElementById('newPass').value = '';
+}
+
+async function loadAdminList(){
+  const list = document.getElementById('adminList');
+  const { data, error } = await supabase.from(TABLE).select('*').order('created_at',{ascending:false}).limit(200);
+  if(error){ list.innerHTML = '<p class="empty-note">Could not load uploads.</p>'; return; }
+  if(!data.length){ list.innerHTML = '<p class="empty-note">No uploads yet.</p>'; return; }
+  list.innerHTML = data.map(row=>`
+    <div class="admin-row" data-slug="${row.slug}">
+      <div class="admin-thumb">${row.category==='image' ? `<img src="${rawUrl(row.thumb_path||row.storage_path)}" alt="">` : iconSvg(row.category)}</div>
+      <div class="admin-info">
+        <div class="admin-name">${escapeHtml(row.file_name)}</div>
+        <div class="admin-meta">${formatBytes(row.size_bytes||0)} · ${row.downloads||0} downloads · ${relTime(row.created_at)}${row.expires_at ? ' · expires '+new Date(row.expires_at).toLocaleDateString() : ''}</div>
+      </div>
+      <div class="admin-actions">
+        <label><input type="checkbox" class="listedToggle" ${row.public_listed?'checked':''}> Public</label>
+        <button class="btn btn-danger delBtn">Delete</button>
+      </div>
+    </div>`).join('');
+
+  list.querySelectorAll('.listedToggle').forEach(cb=>{
+    cb.addEventListener('change', async ()=>{
+      const slug = cb.closest('.admin-row').dataset.slug;
+      await supabase.from(TABLE).update({ public_listed: cb.checked }).eq('slug', slug);
+      toast('Updated.');
+    });
+  });
+  list.querySelectorAll('.delBtn').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const row = btn.closest('.admin-row');
+      const slug = row.dataset.slug;
+      const record = data.find(r=>r.slug===slug);
+      if(!confirm(`Delete "${record.file_name}"? This can't be undone.`)) return;
+      btn.textContent = 'Deleting…'; btn.disabled = true;
+      await deleteStorageObject(record.storage_path);
+      if(record.thumb_path) await deleteStorageObject(record.thumb_path);
+      await supabase.from(TABLE).delete().eq('slug', slug);
+      row.remove();
+      toast('Deleted.');
+    });
+  });
+}
+
+async function deleteStorageObject(path){
+  try{
+    await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path.split('/').map(encodeURIComponent).join('/')}`, {
+      method:'DELETE',
+      headers:{ 'Authorization':'Bearer '+SUPABASE_ANON_KEY, 'apikey':SUPABASE_ANON_KEY }
+    });
+  }catch(e){ /* best-effort */ }
+}
+
+/* ---------- router ---------- */
+const params = new URLSearchParams(location.search);
+const slug = params.get('s');
+if(params.get('admin')){
+  showAdmin();
+}else if(slug){
+  showSharePage(slug);
+}else{
+  loadGallery();
+}
+</script>
+</body>
+</html>
